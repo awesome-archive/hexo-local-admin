@@ -17,9 +17,14 @@ require('./route/route.json').forEach(function (route) {
 });
 
 APP.listen(PORT, function () {
-    LOGGER.info('Hexo local admin is working! Please visit localhost:' + PORT);
+    LOGGER.info('Hexo local admin is working! Please visit http://localhost:' + PORT);
     LOGGER.info('press CTL + C to stop');
 });
 
 // 启动服务时默认跑一边数据
 require('./module/get-all-data').updateDBFile();
+
+process.on('SIGINT', function() {
+    console.log('\nBye, hope to see you again.');
+    process.exit(0);
+});

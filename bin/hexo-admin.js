@@ -4,10 +4,11 @@ const PROGRAM = require('commander'),
     FS = require('fs'),
     PATH = require('path'),
     CHILD_PROCESS = require('child_process'),
-    CONFIG_INIT = require('../module/config-init');
+    LOGGER = require('log4js').getLogger(),
+    CONFIG_INIT = require('../module/config-init'),
+    OS = require('os');
 
-var config = require('../config.json'),
-    configPath = PATH.join(__dirname, '..', 'config.json'),
+var config = CONFIG_INIT.data(),
     data;
 
 PROGRAM.version(require('../package.json').version);
@@ -26,26 +27,20 @@ function start() {
     var isPathReady = CONFIG_INIT.isPathReady();
     if (!isPathReady.status) {
         console.log(isPathReady.msg);
-        process.exit(0);
+        process.exit(1);
     }
     else {
-        console.log('ready to start');
-        var app = CHILD_PROCESS.spawn(
-            'node',
-            ['app.js'],
-            {
-                cwd: PATH.join(__dirname, '..')
-            }
+        LOGGER.info('ready to start');
+        var app = CHILD_PROCESS.fork(
+            'app.js',
+            [],
+            {cwd: PATH.join(__dirname, '..')}
         );
 
-        console.log("pid:" + app.pid);
+        LOGGER.info("pid:" + app.pid);
 
-        app.stdout.on('data', function (data) {
-            console.log(data.toString('utf8'));
-        });
-
-        app.on('exit', function () {
-            console.log('bye!');
+        app.on('error', function (e) {
+            console.log(e);
         });
     }
 }
@@ -57,7 +52,7 @@ if (typeof PROGRAM.rootPath === 'string' && typeof PROGRAM.themeName === 'string
     };
 
     try {
-        FS.writeFileSync(configPath, JSON.stringify(data), 'utf-8');
+        FS.writeFileSync(config.configPath, JSON.stringify(data), 'utf-8');
         console.log('Hexo root path is set to:' + PROGRAM.rootPath);
         console.log('Hexo theme is set to:' + PROGRAM.themeName);
     }
@@ -81,7 +76,7 @@ if (PROGRAM.rootPath) {
         };
 
         try {
-            FS.writeFileSync(configPath, JSON.stringify(data), 'utf-8');
+            FS.writeFileSync(config.configPath, JSON.stringify(data), 'utf-8');
             console.log('Hexo root path is set to:' + rootPath);
         }
         catch (error) {
@@ -104,7 +99,7 @@ if (PROGRAM.themeName) {
         };
 
         try {
-            FS.writeFileSync(configPath, JSON.stringify(data), 'utf-8');
+            FS.writeFileSync(config.configPath, JSON.stringify(data), 'utf-8');
             console.log('Hexo theme is set to:' + themeName);
         }
         catch (error) {
